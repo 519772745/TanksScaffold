@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Grid.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tanks_scaffold</a> &gt; <a href="index.source.html" class="el_package">Tanks</a> &gt; <span class="el_source">Grid.java</span></div><h1>Grid.java</h1><pre class="source lang-java linenums">package Tanks;
+
+import Tools.MathTools;
+
+import java.util.*;
+
+/**
+ * Class representing the map, storing information about the current scene
+ */
+public class Grid {
+
+    private char[][] chessboard; // Representation of the scene in text
+    private float[] peak; // Rough curve of the mountains read in text, used to calculate the real mountain curve
+    private float[] mountainCurve; // Mountain curve, size 32*27. Each point represents the height of the mountain at position i
+
+    private int wind; // Current wind speed
+
+    private HashMap&lt;String, Tank&gt; tanks; // List of tanks, including dead ones for future features
+    private HashMap&lt;Integer, Tree&gt; trees; // List of trees
+
+    private int height; // 20
+    private int width; // 32
+
+    /**
+     * Constructor, used to initialize the chessboard
+     */
+<span class="fc" id="L27">    public Grid(int height, int width) {</span>
+<span class="fc" id="L28">        this.height = height;</span>
+<span class="fc" id="L29">        this.width = width;</span>
+
+<span class="fc" id="L31">        this.peak = new float[width]; // Store the rough peak curve</span>
+<span class="fc" id="L32">        this.mountainCurve = new float[width * 32];</span>
+
+<span class="fc" id="L34">        this.wind = new Random().nextInt(71) - 35; // Set initial wind speed between -35 and 35</span>
+
+<span class="fc" id="L36">        this.tanks = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L37">        this.trees = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Add a tank to the tank HashMap.
+     *
+     * @param name Player name
+     * @param tank Tank object
+     */
+    public void addTanks(String name, Tank tank) {
+<span class="fc" id="L47">        this.tanks.put(name, tank);</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * Add a tree to the tree HashMap.
+     *
+     * @param index Tree's x coordinate
+     * @param t     Tree object
+     */
+    public void addTrees(int index, Tree t) {
+<span class="fc" id="L57">        this.trees.put(index, t);</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Traverse the text map, identify the height of each mountain peak, and store it in Peak.
+     */
+    private void storePeak() {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (int i = 0; i &lt; width; i++) {</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            for (int j = 0; j &lt; height; j++) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (chessboard[i][j] == 'X') {</span>
+<span class="fc" id="L67">                    peak[i] = j; // Store the peak value</span>
+<span class="fc" id="L68">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L72">    }</span>
+
+    /**
+     * Extend the Peak of length 27 to a 27*32 array, and store it in mountainCurve.
+     */
+    private void storeCurve() {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (int i = 0; i &lt; width; i++) {</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            for (int j = 0; j &lt; 32; j++) {</span>
+<span class="fc" id="L80">                mountainCurve[32 * i + j] = peak[i];</span>
+            }
+        }
+<span class="fc" id="L83">    }</span>
+
+    /**
+     * Function to change wind speed.
+     * 卤5 based on the original
+     *
+     * @return Current wind speed
+     */
+    public int changeWind() {
+<span class="fc" id="L92">        this.wind += new Random().nextInt(11) - 5;</span>
+<span class="fc" id="L93">        return this.wind;</span>
+    }
+
+    /**
+     * Get a tank from the HashMap based on the tank name.
+     */
+    public Tank getTank(String name) {
+<span class="fc" id="L100">        return tanks.get(name);</span>
+    }
+
+    /**
+     * Get a tree from the HashMap based on the tree's position.
+     */
+    public Tree getTree(int index) {
+<span class="fc" id="L107">        return trees.get(index);</span>
+    }
+
+    /**
+     * Getter and setter methods for variables
+     */
+    public char[][] getChessboard() {
+<span class="nc" id="L114">        return chessboard;</span>
+    }
+
+    /**
+     * Method called after reading the text chessboard.
+     * Automatically generates a smooth mountain peak curve.
+     */
+    public void setChessboard(char[][] chessboard) {
+<span class="fc" id="L122">        this.chessboard = chessboard;</span>
+<span class="fc" id="L123">        this.storePeak();</span>
+<span class="fc" id="L124">        this.storeCurve();</span>
+
+<span class="fc" id="L126">        this.mountainCurve = MathTools.calculateSMA(mountainCurve, 20);</span>
+<span class="fc" id="L127">        this.mountainCurve = MathTools.calculateSMA(mountainCurve, 20);</span>
+<span class="fc" id="L128">    }</span>
+
+    public float[] getMountainCurve() {
+<span class="fc" id="L131">        return mountainCurve;</span>
+    }
+
+    public HashMap&lt;String, Tank&gt; getTanks() {
+<span class="nc" id="L135">        return tanks;</span>
+    }
+
+    public HashMap&lt;Integer, Tree&gt; getTrees() {
+<span class="fc" id="L139">        return trees;</span>
+    }
+
+    public void setTrees(HashMap&lt;Integer, Tree&gt; trees) {
+<span class="nc" id="L143">        this.trees = trees;</span>
+<span class="nc" id="L144">    }</span>
+
+    public int getWind() {
+<span class="fc" id="L147">        return wind;</span>
+    }
+
+    public void setWind(int wind) {
+<span class="nc" id="L151">        this.wind = wind;</span>
+<span class="nc" id="L152">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

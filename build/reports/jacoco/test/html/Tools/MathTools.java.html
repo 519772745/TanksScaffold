@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MathTools.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tanks_scaffold</a> &gt; <a href="index.source.html" class="el_package">Tools</a> &gt; <span class="el_source">MathTools.java</span></div><h1>MathTools.java</h1><pre class="source lang-java linenums">package Tools;
+
+/**
+ * MathTools class contains complex mathematical calculations used in the code.
+ */
+<span class="nc" id="L6">public class MathTools {</span>
+
+    /**
+     * Calculates the distance between two points.
+     *
+     * @param x1 The x-coordinate of the first point
+     * @param y1 The y-coordinate of the first point
+     * @param x2 The x-coordinate of the second point
+     * @param y2 The y-coordinate of the second point
+     * @return The distance between the two points
+     */
+    public static float getDistance(float x1, float y1, float x2, float y2) {
+<span class="fc" id="L18">        double distance_square = Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);</span>
+<span class="fc" id="L19">        return (float) Math.sqrt(distance_square);</span>
+    }
+
+    /**
+     * Computes the value of a linear equation y = wx + b.
+     *
+     * @param x The input value
+     * @param w The coefficient of x
+     * @param b The constant term
+     * @return The value of y for the given x
+     */
+    public static float Linear(float x, float w, float b) {
+<span class="fc" id="L31">        return w * x + b;</span>
+    }
+
+    /**
+     * Computes the Simple Moving Average (SMA) of a data array.
+     * Uses 0 to fill in, ensuring the length of the returned array remains unchanged.
+     *
+     * @param data       The data array to compute the moving average
+     * @param windowSize The size of the moving average window
+     * @return An array containing the moving averages
+     */
+    public static float[] calculateSMA(float[] data, int windowSize) {
+<span class="fc" id="L43">        float[] movingAverages = new float[data.length];</span>
+
+        // Calculate the moving average
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (int i = 0; i &lt; data.length; i++) {</span>
+<span class="fc" id="L47">            float sum = 0.0f;</span>
+<span class="fc" id="L48">            int count = 0;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for (int j = Math.max(0, i - windowSize + 1); j &lt;= i; j++) {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">                if (j &lt; 0) {</span>
+<span class="nc" id="L51">                    sum += data[0]; // Fill with the first data point</span>
+                } else {
+<span class="fc" id="L53">                    sum += data[j];</span>
+                }
+<span class="fc" id="L55">                count++;</span>
+            }
+<span class="fc" id="L57">            movingAverages[i] = sum / count;</span>
+        }
+
+<span class="fc" id="L60">        return movingAverages;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

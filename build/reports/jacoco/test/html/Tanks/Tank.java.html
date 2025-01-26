@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Tank.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tanks_scaffold</a> &gt; <a href="index.source.html" class="el_package">Tanks</a> &gt; <span class="el_source">Tank.java</span></div><h1>Tank.java</h1><pre class="source lang-java linenums">package Tanks;
+
+import processing.core.PImage;
+
+import java.util.Random;
+
+/**
+ * Tank class, stores information related to tanks
+ */
+public class Tank {
+    private final char player; // Current player
+
+    private int acc_X; // Precise X-coordinate
+    private float height;
+
+    private float HP;
+    private int fuel;
+    private float power;
+
+    // Tank color
+    private int r;
+    private int g;
+    private int b;
+
+    /* Turret */
+    float turretDegree; // Angle of turret rotation
+    int turretLength; // Length of the turret
+    float endTurretX; // X and Y coordinates of the turret endpoint, where the projectile will be fired
+    float endTurretY;
+
+    /* Projectile */
+    int largerProjectile; // Whether there is a large projectile
+
+    private int parachutes_num; // Number of parachutes owned
+    private boolean using_parachutes; // Whether parachutes are currently being used
+    private float target_height; // The coordinate to descend to
+    private float drop_height; // Actual height of descent, calculated when descent is occurring
+    private char drop_maker; // Who caused the fall
+
+<span class="fc" id="L40">    private final int CELLSIZE = 32;</span>
+
+
+    /**
+     * Constructor
+     *
+     * @param name  Player's name
+     * @param color Tank's color, if the value does not match the format (r,g,b), it will automatically use random colors
+     */
+<span class="fc" id="L49">    public Tank(char name, String color) {</span>
+<span class="fc" id="L50">        this.player = name;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (color.equals(&quot;random&quot;)) {</span>
+<span class="fc" id="L52">            generateRandomColor();</span>
+        } else {
+<span class="fc" id="L54">            String[] rgbArray = color.split(&quot;,&quot;);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (rgbArray.length == 3) {</span>
+<span class="fc" id="L56">                this.r = Integer.parseInt(rgbArray[0]);</span>
+<span class="fc" id="L57">                this.g = Integer.parseInt(rgbArray[1]);</span>
+<span class="fc" id="L58">                this.b = Integer.parseInt(rgbArray[2]);</span>
+
+            } else {
+<span class="fc" id="L61">                generateRandomColor();</span>
+            }
+        }
+
+        // Basic information
+<span class="fc" id="L66">        this.HP = 100;</span>
+<span class="fc" id="L67">        this.fuel = 250;</span>
+<span class="fc" id="L68">        this.power = 50;</span>
+
+        // Turret and projectile
+<span class="fc" id="L71">        this.turretDegree = 0;</span>
+<span class="fc" id="L72">        this.turretLength = 15;</span>
+<span class="fc" id="L73">        this.target_height = -1;</span>
+<span class="fc" id="L74">        this.largerProjectile = 0;</span>
+
+        // Parachutes
+<span class="fc" id="L77">        this.parachutes_num = 3;</span>
+<span class="fc" id="L78">        this.using_parachutes = false;</span>
+<span class="fc" id="L79">    }</span>
+
+    /**
+     * Method for drawing tanks
+     *
+     * @param app The application instance
+     */
+    public void draw(App app) {
+        // Draw the tank body
+<span class="fc" id="L88">        app.fill(r, g, b);</span>
+<span class="fc" id="L89">        app.rect(0.14F * CELLSIZE + acc_X - 0.5F * CELLSIZE, 0.6F * CELLSIZE + (height) * CELLSIZE, CELLSIZE * 0.75F, CELLSIZE / 4, 20);</span>
+<span class="fc" id="L90">        app.rect(acc_X - 0.5F * CELLSIZE, 0.75F * CELLSIZE + height * CELLSIZE, CELLSIZE, CELLSIZE / 4, 20);</span>
+<span class="fc" id="L91">        app.noStroke();</span>
+
+        // Draw the turret
+<span class="fc" id="L94">        app.stroke(0);</span>
+<span class="fc" id="L95">        float coreX = acc_X;</span>
+<span class="fc" id="L96">        float coreY = height * CELLSIZE + 0.6F * CELLSIZE;</span>
+<span class="fc" id="L97">        double theta = Math.toRadians(turretDegree);</span>
+<span class="fc" id="L98">        this.endTurretX = (float) (coreX + turretLength * Math.cos(theta));</span>
+<span class="fc" id="L99">        this.endTurretY = (float) (coreY + turretLength * Math.sin(theta));</span>
+
+<span class="fc" id="L101">        app.line(coreX, coreY, endTurretX, endTurretY);</span>
+<span class="fc" id="L102">        app.noStroke();</span>
+
+        // Draw the parachute
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (isUsing_parachutes()) {</span>
+<span class="fc" id="L106">            PImage parachuteImg = app.loadImage(&quot;Tanks/parachute.png&quot;);</span>
+<span class="fc" id="L107">            app.image(parachuteImg, acc_X - 0.5F * CELLSIZE, height * CELLSIZE - 0.3F * CELLSIZE, 30, 30);</span>
+        }
+<span class="fc" id="L109">    }</span>
+
+    /**
+     * Method to update HP, ensuring HP will not be negative
+     *
+     * @param damage Amount of damage received
+     */
+    public void updateHP(float damage) {
+<span class="fc" id="L117">        this.HP -= damage;</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (this.HP &lt; 0)</span>
+<span class="fc" id="L119">            this.HP = 0;</span>
+<span class="fc" id="L120">    }</span>
+
+    /**
+     * Method to set a random color. RGB values are between 0-255.
+     */
+    public void generateRandomColor() {
+<span class="fc" id="L126">        Random random = new Random();</span>
+<span class="fc" id="L127">        this.r = random.nextInt(256); // Generate a random integer between 0 and 255 as the red component</span>
+<span class="fc" id="L128">        this.g = random.nextInt(256); // Generate a random integer between 0 and 255 as the green component</span>
+<span class="fc" id="L129">        this.b = random.nextInt(256); // Generate a random integer between 0 and 255 as the blue component</span>
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Method to use parachutes
+     * Decreases the number of parachutes and sets using_parachutes to true
+     */
+    public void useParachutes() {
+<span class="fc" id="L137">        this.parachutes_num--;</span>
+<span class="fc" id="L138">        this.using_parachutes = true;</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * Getter and setter methods for variables
+     */
+    public char getPlayer() {
+<span class="fc" id="L145">        return player;</span>
+    }
+
+    public int getAcc_X() {
+<span class="fc" id="L149">        return acc_X;</span>
+    }
+
+    public void setAcc_X(int acc_X) {
+<span class="fc" id="L153">        this.acc_X = acc_X;</span>
+<span class="fc" id="L154">    }</span>
+
+    public float getHeight() {
+<span class="fc" id="L157">        return height;</span>
+    }
+
+    public void setHeight(float height) {
+<span class="fc" id="L161">        this.height = height;</span>
+<span class="fc" id="L162">    }</span>
+
+    public float getHP() {
+<span class="fc" id="L165">        return HP;</span>
+    }
+
+    public void setHP(float HP) {
+<span class="fc" id="L169">        this.HP = HP;</span>
+<span class="fc" id="L170">    }</span>
+
+    public int getFuel() {
+<span class="fc" id="L173">        return fuel;</span>
+    }
+
+    public void setFuel(int fuel) {
+<span class="fc" id="L177">        this.fuel = fuel;</span>
+<span class="fc" id="L178">    }</span>
+
+    public float getPower() {
+<span class="fc" id="L181">        return power;</span>
+    }
+
+    public void setPower(float power) {
+<span class="fc" id="L185">        this.power = power;</span>
+<span class="fc" id="L186">    }</span>
+
+    public float getTurretDegree() {
+<span class="fc" id="L189">        return turretDegree;</span>
+    }
+
+    public void setTurretDegree(float turretDegree) {
+<span class="fc" id="L193">        this.turretDegree = turretDegree;</span>
+<span class="fc" id="L194">    }</span>
+
+    public int getTurretLength() {
+<span class="fc" id="L197">        return turretLength;</span>
+    }
+
+    public void setTurretLength(int turretLength) {
+<span class="fc" id="L201">        this.turretLength = turretLength;</span>
+<span class="fc" id="L202">    }</span>
+
+    public void setLargerProjectile(int largerProjectile) {
+<span class="fc" id="L205">        this.largerProjectile = largerProjectile;</span>
+<span class="fc" id="L206">    }</span>
+
+    public float getEndTurretX() {
+<span class="fc" id="L209">        return endTurretX;</span>
+    }
+
+    public float getEndTurretY() {
+<span class="fc" id="L213">        return endTurretY;</span>
+    }
+
+    public int getLargerProjectile() {
+<span class="fc" id="L217">        return largerProjectile;</span>
+    }
+
+    public int getParachutes_num() {
+<span class="fc" id="L221">        return parachutes_num;</span>
+    }
+
+    public void setParachutes_num(int parachutes_num) {
+<span class="fc" id="L225">        this.parachutes_num = parachutes_num;</span>
+
+
+<span class="fc" id="L228">    }</span>
+
+    public boolean isUsing_parachutes() {
+<span class="fc" id="L231">        return using_parachutes;</span>
+    }
+
+    public void setUsing_parachutes(boolean using_parachutes) {
+<span class="fc" id="L235">        this.using_parachutes = using_parachutes;</span>
+<span class="fc" id="L236">    }</span>
+
+    public float getTarget_height() {
+<span class="fc" id="L239">        return target_height;</span>
+    }
+
+    public void setTarget_height(float target_height, char maker) {
+<span class="fc" id="L243">        this.target_height = target_height;</span>
+<span class="fc" id="L244">        this.drop_height = Math.abs(this.target_height - this.height);</span>
+<span class="fc" id="L245">        this.drop_maker = maker;</span>
+<span class="fc" id="L246">    }</span>
+
+    public float getDrop_height() {
+<span class="fc" id="L249">        return drop_height;</span>
+    }
+
+    public void setDrop_height(float drop_height) {
+<span class="fc" id="L253">        this.drop_height = drop_height;</span>
+<span class="fc" id="L254">    }</span>
+
+    public char getDrop_maker() {
+<span class="fc" id="L257">        return drop_maker;</span>
+    }
+
+    public void setDrop_maker(char drop_maker) {
+<span class="fc" id="L261">        this.drop_maker = drop_maker;</span>
+<span class="fc" id="L262">    }</span>
+
+    public int getR() {
+<span class="fc" id="L265">        return r;</span>
+    }
+
+    public int getG() {
+<span class="fc" id="L269">        return g;</span>
+    }
+
+    public int getB() {
+<span class="fc" id="L273">        return b;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
